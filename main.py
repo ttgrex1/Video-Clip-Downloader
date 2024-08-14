@@ -211,7 +211,7 @@ def create_gui():
     style.configure('TCheckbutton', background='black', foreground='white')
     style.configure('TCombobox', fieldbackground='darkgray', foreground='black', background='gray')
 
-    ttk.Label(root, text="YouTube | Tiktok | Facebook URL:").pack(pady=5)
+    ttk.Label(root, text="Enter Video URL:").pack(pady=5)
     url_entry = ttk.Entry(root, width=50)
     url_entry.pack(pady=5)
 
