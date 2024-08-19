@@ -4,6 +4,7 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import yt_dlp
+import glob
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -22,18 +23,35 @@ def convert_time_to_seconds(time_str):
 def sanitize_filename(filename):
     return "".join([c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename])
 
-def download_video_with_yt_dlp(url, start_time=None, end_time=None, output_file="output", resolution='720'):
+def download_video_with_yt_dlp(url, start_time=None, end_time=None, output_file="output", resolution='720', audio_only=False):
     try:
         logging.info(f"Starting download process for URL: {url}")
-        ydl_opts = {
-            'format': f'bestvideo[height<={resolution}]+bestaudio/best[height<={resolution}]',
-            'outtmpl': f'{output_file}.%(ext)s',
-            'verbose': True,
-            'noplaylist': True,
-            'progress_hooks': [cleanup_hook],
-            'external_downloader': 'aria2c',  # Use aria2c as external downloader
-            'external_downloader_args': ['-x', '16', '-s', '16', '-k', '1M'],  # Aria2c arguments for multiple connections
-        }
+        
+        if audio_only:
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': f'{output_file}.%(ext)s',
+                'verbose': True,
+                'noplaylist': True,
+                'progress_hooks': [cleanup_hook],
+                'external_downloader': 'aria2c',
+                'external_downloader_args': ['-x', '16', '-s', '16', '-k', '1M'],
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+        else:
+            ydl_opts = {
+                'format': f'bestvideo[height<={resolution}]+bestaudio/best[height<={resolution}]',
+                'outtmpl': f'{output_file}.%(ext)s',
+                'verbose': True,
+                'noplaylist': True,
+                'progress_hooks': [cleanup_hook],
+                'external_downloader': 'aria2c',
+                'external_downloader_args': ['-x', '16', '-s', '16', '-k', '1M'],
+            }
 
         logging.debug(f"yt-dlp options: {ydl_opts}")
 
@@ -42,48 +60,31 @@ def download_video_with_yt_dlp(url, start_time=None, end_time=None, output_file=
             info_dict = ydl.extract_info(url, download=True)
             logging.debug(f"Video info: {info_dict}")
             
-            filename = ydl.prepare_filename(info_dict)
+            # Search for the downloaded file
+            search_pattern = f'{output_file}.*'
+            files_found = glob.glob(search_pattern)
+            
+            if not files_found:
+                logging.error(f"No files found matching pattern: {search_pattern}")
+                raise FileNotFoundError(f"No files found matching pattern: {search_pattern}")
+            
+            filename = files_found[0]  # Assume the first match is the correct file
             logging.info(f"Download completed. Temporary file: {filename}")
 
-        if start_time and end_time:
-            start_seconds = convert_time_to_seconds(start_time)
-            end_seconds = convert_time_to_seconds(end_time)
-
-            final_output_file = f"{output_file}_{sanitize_filename(info_dict['title'])}.mp4"
-            logging.info(f"Preparing to extract clip to: {final_output_file}")
-
-            ffmpeg_command = [
-                'ffmpeg',
-                '-i', filename,
-                '-ss', str(start_seconds),
-                '-to', str(end_seconds),
-                '-c:v', 'libx264',
-                '-c:a', 'aac',
-                '-strict', 'experimental',
-                final_output_file
-            ]
-
-            logging.info(f"Executing FFmpeg command: {' '.join(ffmpeg_command)}")
-            result = subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
-            logging.debug(f"FFmpeg output: {result.stdout}")
-            logging.debug(f"FFmpeg error (if any): {result.stderr}")
-
-            logging.info(f"Removing temporary file {filename}")
-            os.remove(filename)
-
-            logging.info(f"Clip saved as {final_output_file}")
-            return final_output_file
-        else:
-            final_output_file = f"{output_file}_{sanitize_filename(info_dict['title'])}.mp4"
+            final_output_file = f"{output_file}_{sanitize_filename(info_dict['title'])}.mp3" if audio_only else f"{output_file}_{sanitize_filename(info_dict['title'])}.mp4"
+            
+            logging.info(f"Renaming file {filename} to {final_output_file}")
             os.rename(filename, final_output_file)
+
+            logging.info(f"File saved as {final_output_file}")
             return final_output_file
 
     except yt_dlp.DownloadError as e:
         logging.error(f"yt-dlp download error: {e}")
         raise
-    except subprocess.CalledProcessError as e:
-        logging.error(f"FFmpeg error: {e}")
-        logging.error(f"FFmpeg output: {e.output}")
+    except FileNotFoundError as e:
+        logging.error(f"File not found error: {e}")
+        messagebox.showerror("Error", f"File not found: {str(e)}")
         raise
     except Exception as e:
         logging.error(f"Unexpected error: {e}", exc_info=True)
@@ -102,7 +103,6 @@ def cleanup_hook(d):
                 os.remove(ytdl_file)
         except OSError as e:
             logging.error(f"Error removing temporary files: {e}")
-
 
 def download_youtube_transcript(url, output_folder):
     try:
@@ -139,16 +139,16 @@ def download_youtube_transcript(url, output_folder):
         logging.error(f"Error downloading transcript: {e}")
         return None
 
-def execute_download(url, start_time, end_time, folder, resolution, download_full, download_transcript_option):
+def execute_download(url, start_time, end_time, folder, resolution, download_full, download_transcript_option, audio_only):
     try:
         output_file = os.path.join(folder, "output")
 
         if download_full:
-            final_file = download_video_with_yt_dlp(url, output_file=output_file, resolution=resolution)
+            final_file = download_video_with_yt_dlp(url, output_file=output_file, resolution=resolution, audio_only=audio_only)
         else:
-            final_file = download_video_with_yt_dlp(url, start_time, end_time, output_file=output_file, resolution=resolution)
+            final_file = download_video_with_yt_dlp(url, start_time, end_time, output_file=output_file, resolution=resolution, audio_only=audio_only)
 
-        messagebox.showinfo("Success", f"Video downloaded and saved as: {final_file}")
+        messagebox.showinfo("Success", f"File downloaded and saved as: {final_file}")
 
         if download_transcript_option:
             transcript_file = download_youtube_transcript(url, folder)
@@ -170,7 +170,7 @@ def browse_folder():
 class Switch(tk.Frame):
     def __init__(self, master=None, **kwargs):
         tk.Frame.__init__(self, master, **kwargs)
-        self.config(width=42, height=21, bg="white")  # Further adjusted width and height
+        self.config(width=42, height=21, bg="white")
 
         self.canvas = tk.Canvas(self, width=42, height=21, bg="white", bd=0, highlightthickness=0)
         self.canvas.pack()
@@ -211,7 +211,7 @@ def create_gui():
     style.configure('TCheckbutton', background='black', foreground='white')
     style.configure('TCombobox', fieldbackground='darkgray', foreground='black', background='gray')
 
-    ttk.Label(root, text="Enter Video URL:").pack(pady=5)
+    ttk.Label(root, text="YouTube | Tiktok | Facebook URL:").pack(pady=5)
     url_entry = ttk.Entry(root, width=50)
     url_entry.pack(pady=5)
 
@@ -241,6 +241,13 @@ def create_gui():
     ttk.Label(download_transcript_frame, text="Download Transcript (if available):").pack(side='left', padx=5)
     download_transcript_switch = Switch(download_transcript_frame)
     download_transcript_switch.pack(side='left', padx=5)
+
+    # Create a frame for the audio-only switch
+    audio_only_frame = tk.Frame(root, bg='black')
+    audio_only_frame.pack(pady=5)
+    ttk.Label(audio_only_frame, text="Download Audio Only:").pack(side='left', padx=5)
+    audio_only_switch = Switch(audio_only_frame)
+    audio_only_switch.pack(side='left', padx=5)
 
     ttk.Label(root, text="Resolution:").pack(pady=5)
     resolution_var = tk.StringVar(value='720p')
@@ -275,12 +282,14 @@ def create_gui():
         resolution = resolution_var.get()
         download_full = download_full_switch.get_state()
         download_transcript_option = download_transcript_switch.get_state()
+        audio_only = audio_only_switch.get_state()  # Capture the state of the audio-only switch
+
         if not url or (not download_full and (not start_time or not end_time)):
             messagebox.showerror("Error", "Please fill in all fields.")
             return
 
         def download_thread():
-            execute_download(url, start_time, end_time, folder, resolution, download_full, download_transcript_option)
+            execute_download(url, start_time, end_time, folder, resolution, download_full, download_transcript_option, audio_only)
         
         threading.Thread(target=download_thread, daemon=True).start()
 
