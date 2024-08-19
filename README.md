@@ -1,36 +1,30 @@
 Overview
-Video Clip Downloader is a Python-based GUI application that enables users to download video clips from popular platforms like YouTube, TikTok, and Facebook. The tool provides the flexibility to specify start and end times for clips, select video resolution, and optionally download available transcripts. It uses yt-dlp for downloading and ffmpeg for video processing, wrapped in a user-friendly tkinter interface.
+Video Clip Downloader is a Python-based GUI application that enables users to download video clips from popular platforms like YouTube, TikTok, and Facebook. The tool provides the flexibility to specify start and end times for clips, select video resolution, download audio-only versions, and optionally download available transcripts. It uses yt-dlp for downloading and ffmpeg for video processing, wrapped in a user-friendly tkinter interface.
 
 Features
-•	Download Video Clips: Specify start and end times to download specific parts of a video.
-•	Resolution Selection: Choose from multiple resolutions (144p, 240p, 360p, 480p, 720p, 1080p).
-•	Transcript Download: Automatically download available transcripts in text format.
-•	Batch Downloading: Supports efficient, multi-threaded downloading using aria2c.
-•	Cross-Platform: Runs on Windows, macOS, and Linux.
+Download Video Clips: Specify start and end times to download specific parts of a video.
+Download Audio Only: Option to download just the audio from the video.
+Resolution Selection: Choose from multiple resolutions (144p, 240p, 360p, 480p, 720p, 1080p).
+Transcript Download: Automatically download available transcripts in text format.
+Batch Downloading: Supports efficient, multi-threaded downloading using aria2c.
+Cross-Platform: Runs on Windows, macOS, and Linux.
 
 Installation
 Prerequisites
-•	Python 3.x
-•	yt-dlp (Install via pip)
-•	ffmpeg (Ensure it’s installed and added to your system's PATH)
-•	aria2c (Optional, for faster downloads)
-### Prerequisites
-- Python 3.x (including `tkinter` for the GUI)
-- `ffmpeg` (Ensure it’s installed and added to your system's PATH)
+Python 3.x (including tkinter for the GUI)
+yt-dlp (Install via pip)
+ffmpeg (Ensure it’s installed and added to your system's PATH)
+aria2c (Optional, for faster downloads)
 
 Steps
 1.	Clone the repository:
-bash
-Copy code
 git clone https://github.com/ttgrex1/Video-Clip-Downloader.git
 cd video-clip-downloader
-2.	Install the required Python packages:
-bash
-Copy code
+
+3.	Install the required Python packages:
 pip install -r requirements.txt
-3.	Run the application:
-bash
-Copy code
+
+5.	Run the application:
 python main.py
 
 Usage
@@ -38,11 +32,10 @@ Usage
 2.	Set the start and end times (optional).
 3.	Choose the desired video resolution.
 4.	Select the folder where the video should be saved.
-5.	Click the Download button to start the process.
+5.	Toggle options for full video download, transcript download, and audio-only download.
+6.	Click the Download button to start the process.
 
-### Prerequisites
-- Python 3.x (including `tkinter` for the GUI)
-- `ffmpeg` (Ensure it’s installed and added to your system's PATH)
+*Audio option only allows for full audio download at this time. 
 
 Contributing
 Contributions are welcome! Please submit a pull request or open an issue for any bugs or feature requests.
