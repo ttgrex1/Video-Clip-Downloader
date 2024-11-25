@@ -1,7 +1,8 @@
-
-Ove![Video Downloader 2](https://github.com/user-attachments/assets/332d67e2-29c2-48e0-9bc5-2731a604696a)
 ![Video Downloader 1](https://github.com/user-attachments/assets/410faa79-c983-42ff-96cf-4196c7c57b24)
-rview
+
+![Video Downloader 2](https://github.com/user-attachments/assets/332d67e2-29c2-48e0-9bc5-2731a604696a)
+
+Overview
 Video Clip Downloader is a Python-based GUI application that enables users to download video clips from popular platforms like YouTube, TikTok, and Facebook. The tool provides the flexibility to specify start and end times for clips, select video resolution, download audio-only versions, and optionally download available transcripts. It uses yt-dlp for downloading and ffmpeg for video processing, wrapped in a user-friendly tkinter interface.
 
 Features
